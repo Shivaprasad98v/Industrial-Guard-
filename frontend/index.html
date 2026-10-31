@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>IndustrialGuard AI | Industrial Intelligence</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/static/styles.css">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script><script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body>
+<div class="layout">
+<aside class="sidebar">
+  <a class="brand" href="#overview"><span class="brand-mark"><i data-lucide="activity"></i></span><span><b>IndustrialGuard <em>AI</em></b><small>INDUSTRIAL INTELLIGENCE</small></span></a>
+  <div class="nav-label">WORKSPACE</div>
+  <nav id="mainNav">
+    <button class="nav-item active" data-page="overview"><i data-lucide="layout-dashboard"></i>Overview</button>
+    <button class="nav-item" data-page="sensors"><i data-lucide="radio-tower"></i>Live sensors</button>
+    <button class="nav-item" data-page="vibration"><i data-lucide="activity"></i>Vibration analytics</button>
+    <button class="nav-item" data-page="alarms"><i data-lucide="bell-ring"></i>Alarm management <span id="alarmCount" class="nav-count">0</span></button>
+    <button class="nav-item" data-page="devices"><i data-lucide="cpu"></i>Device health</button>
+    <button class="nav-item" data-page="reports"><i data-lucide="file-chart-column"></i>Reports & history</button>
+    <button class="nav-item" data-page="maintenance"><i data-lucide="clipboard-check"></i>Maintenance planner</button>
+  </nav>
+  <div class="sidebar-bottom"><div class="support-card"><span class="support-icon"><i data-lucide="shield-check"></i></span><b>Monitoring status</b><p id="sideConnection">Waiting for data source</p><span class="side-status"><i></i><span id="sideMode">NOT CONNECTED</span></span></div><div class="profile"><div class="avatar">IG</div><div><b>System Operator</b><small>Local workstation</small></div><i data-lucide="chevron-down"></i></div></div>
+</aside>
+<main class="main-area">
+<header class="topbar"><div><div class="breadcrumb">WORKSPACE <span>/</span> <b id="pageName">Overview</b></div><h1 id="pageTitle">Machine overview</h1><p id="pageSubtitle">A live operational picture of your monitored equipment.</p></div><div class="top-actions"><span id="modeBadge" class="mode-badge demo"><i></i> DEMO MODE</span><label class="machine-picker"><i data-lucide="factory"></i><select id="machineSelect"><option>Machine 01</option></select></label><button class="command-button" id="commandBtn" title="Quick navigation"><kbd>⌘</kbd><span>Quick jump</span><kbd>K</kbd></button><button class="icon-button" id="refreshBtn" title="Refresh data"><i data-lucide="refresh-cw"></i></button></div></header>
+<div class="page-content">
+<section class="page active" id="page-overview">
+  <div class="welcome-row"><div><span class="eyebrow">LIVE OPERATIONS CENTER</span><h2>Good day, Operator <span class="wave">✦</span></h2><p>Here is the current condition of your industrial asset.</p></div><div class="updated"><span class="pulse-dot"></span><span id="lastUpdated">Waiting for first telemetry</span></div></div>
+  <div class="kpi-grid">
+    <article class="kpi kpi-violet"><div class="kpi-top"><span>VIBRATION RMS</span><i data-lucide="activity"></i></div><div class="kpi-value" id="kpiVibration">— <small>g</small></div><div class="kpi-bottom"><span id="vibrationStatus" class="state neutral">Awaiting data</span><span class="kpi-note">MPU6050</span></div></article>
+    <article class="kpi kpi-blue"><div class="kpi-top"><span>MOTOR SPEED</span><i data-lucide="gauge"></i></div><div class="kpi-value" id="kpiRpm">— <small>RPM</small></div><div class="kpi-bottom"><span id="rpmStatus" class="state neutral">Awaiting data</span><span class="kpi-note">A3144</span></div></article>
+    <article class="kpi kpi-orange"><div class="kpi-top"><span>TEMPERATURE</span><i data-lucide="thermometer"></i></div><div class="kpi-value" id="kpiTemp">— <small>°C</small></div><div class="kpi-bottom"><span id="tempStatus" class="state neutral">Awaiting data</span><span class="kpi-note">DHT22 ambient</span></div></article>
+    <article class="kpi kpi-teal"><div class="kpi-top"><span>HUMIDITY</span><i data-lucide="droplets"></i></div><div class="kpi-value" id="kpiHumidity">— <small>%</small></div><div class="kpi-bottom"><span class="state neutral" id="humidityStatus">Awaiting data</span><span class="kpi-note">DHT22</span></div></article>
+  </div>
+  <div class="overview-grid">
+    <article class="panel trend-panel"><div class="panel-heading"><div><span class="eyebrow">MACHINE CONDITION</span><h3>Vibration trend</h3></div><span class="chart-legend"><i class="legend-dot cyan"></i>RMS acceleration</span></div><div class="chart-box"><canvas id="vibrationChart"></canvas></div><div class="chart-footer"><span>Recent incoming samples</span><b id="vibNow">No live sample</b></div></article>
+    <article class="panel health-panel"><div class="panel-heading"><div><span class="eyebrow">ASSET STATUS</span><h3>Machine health</h3></div><span id="machineState" class="state neutral">NO DATA</span></div><div class="health-content"><div class="health-ring" id="healthRing"><div><b id="healthValue">—</b><small>HEALTH SCORE</small></div></div><div class="health-copy"><b id="healthHeadline">Waiting for telemetry</b><p id="healthDescription">Health scoring will appear after live sensor data is received.</p><div class="health-legend"><span><i class="green"></i>Normal</span><span><i class="amber"></i>Warning</span><span><i class="red"></i>Critical</span></div></div></div><div class="health-foot"><span>ESP32 gateway</span><b id="gatewayStatus">Not connected</b></div></article>
+  </div>
+  <div class="bottom-grid"><article class="panel sensor-summary"><div class="panel-heading"><div><span class="eyebrow">HARDWARE</span><h3>Sensor connectivity</h3></div><button class="text-button" data-goto="sensors">View all <i data-lucide="arrow-up-right"></i></button></div><div id="overviewSensorList" class="mini-sensor-grid"></div></article><article class="panel event-summary"><div class="panel-heading"><div><span class="eyebrow">LATEST ACTIVITY</span><h3>Recent events</h3></div><button class="text-button" data-goto="alarms">View log <i data-lucide="arrow-up-right"></i></button></div><div id="recentEvents" class="recent-events"><div class="empty-note">No events received yet.</div></div></article></div>
+</section>
+<section class="page" id="page-sensors"><div class="section-intro"><div><span class="eyebrow">HARDWARE TELEMETRY</span><h2>Live sensor monitoring</h2><p>Actual readings and diagnostic states received from the ESP32.</p></div><span class="live-tag"><i></i> LIVE FEED</span></div><div class="sensor-grid" id="sensorGrid"></div><article class="panel raw-panel"><div class="panel-heading"><div><span class="eyebrow">EVENT STREAM</span><h3>Sensor event feed</h3></div><span class="subtle">State changes only</span></div><div id="sensorEvents" class="event-feed"><div class="empty-note">Waiting for sensor events.</div></div></article></section>
+<section class="page" id="page-vibration"><div class="section-intro"><div><span class="eyebrow">SIGNAL PROCESSING</span><h2>Vibration analytics</h2><p>Acceleration axes and vibration metrics reported by the MPU6050.</p></div><span class="live-tag"><i></i> LIVE FEED</span></div><div class="axis-grid"><article class="axis-card"><span>X ACCELERATION</span><b id="axisX">—</b><small>m/s²</small></article><article class="axis-card"><span>Y ACCELERATION</span><b id="axisY">—</b><small>m/s²</small></article><article class="axis-card"><span>Z ACCELERATION</span><b id="axisZ">—</b><small>m/s²</small></article><article class="axis-card"><span>GYRO X / Y / Z</span><b id="gyroXYZ">—</b><small>rad/s</small></article></div><div class="analytics-grid"><article class="panel"><div class="panel-heading"><div><span class="eyebrow">TIME DOMAIN</span><h3>Acceleration history</h3></div><span class="chart-legend"><i class="legend-dot cyan"></i>X <i class="legend-dot purple"></i>Y <i class="legend-dot orange"></i>Z</span></div><div class="chart-box tall"><canvas id="axisChart"></canvas></div></article><article class="panel"><div class="panel-heading"><div><span class="eyebrow">FREQUENCY DOMAIN</span><h3>FFT spectrum</h3></div><span class="subtle">Requires sampled signal window</span></div><div class="fft-placeholder" id="fftPlaceholder"><i data-lucide="audio-waveform"></i><b>FFT data not received</b><p>Send a real frequency spectrum from the ESP32/backend to populate this chart. No synthetic spectrum is shown.</p></div><div class="chart-box tall hidden" id="fftChartWrap"><canvas id="fftChart"></canvas></div></article></div><div class="note-banner"><i data-lucide="info"></i><span>Raw acceleration includes gravity. For reliable vibration RMS and FFT, the firmware should sample consistently, remove the gravity/DC component and send computed metrics or a sample window.</span></div></section>
+<section class="page" id="page-alarms"><div class="section-intro"><div><span class="eyebrow">INCIDENT RESPONSE</span><h2>Alarm management</h2><p>Review abnormal conditions and acknowledge inspected events.</p></div><button class="action-button" id="exportBtn"><i data-lucide="download"></i> Export CSV</button></div><div class="alarm-stats"><div class="alarm-stat"><small>UNACKNOWLEDGED</small><b id="unackedCount">0</b></div><div class="alarm-stat"><small>CRITICAL</small><b id="criticalCount">0</b></div><div class="alarm-stat"><small>WARNINGS</small><b id="warningCount">0</b></div></div><article class="panel alarm-panel"><div class="panel-heading"><div><span class="eyebrow">EVENT REGISTER</span><h3>Alarm history</h3></div><select id="severityFilter"><option value="All">All severities</option><option>Warning</option><option>Critical</option><option>Info</option></select></div><div class="table-wrap"><table><thead><tr><th>TIME</th><th>SENSOR / PARAMETER</th><th>VALUE</th><th>SEVERITY</th><th>DESCRIPTION</th><th>STATUS</th><th></th></tr></thead><tbody id="alarmRows"></tbody></table></div><div id="noAlarms" class="empty-note">No alarm records yet.</div></article></section>
+<section class="page" id="page-devices"><div class="section-intro"><div><span class="eyebrow">SYSTEM DIAGNOSTICS</span><h2>Device health</h2><p>Controller, transport and individual sensor diagnostics.</p></div></div><div class="device-kpis"><article class="panel device-kpi"><i data-lucide="cpu"></i><span>CONTROLLER</span><b id="espState">Unknown</b><small id="espLastSeen">No heartbeat received</small></article><article class="panel device-kpi"><i data-lucide="radio-tower"></i><span>MQTT BROKER</span><b id="mqttState">Checking</b><small id="mqttDetail">Broker connection status</small></article><article class="panel device-kpi"><i data-lucide="database"></i><span>BACKEND API</span><b id="apiState">Checking</b><small>FastAPI service</small></article></div><article class="panel"><div class="panel-heading"><div><span class="eyebrow">HARDWARE INVENTORY</span><h3>Sensor diagnostics</h3></div><span class="subtle">Status depends on firmware diagnostics</span></div><div id="deviceSensorList" class="device-list"></div></article><div class="note-banner"><i data-lucide="alert-circle"></i><span>A sensor reading that stays unchanged is not proof of disconnection. Firmware must explicitly report initialization/read errors or use suitable electrical line diagnostics. A3144 no-magnet and MC-38 open are valid operating states, not disconnect states.</span></div></section>
+<section class="page" id="page-reports"><div class="section-intro"><div><span class="eyebrow">HISTORICAL INTELLIGENCE</span><h2>Reports & history</h2><p>Review stored telemetry from the backend and export records for analysis.</p></div><button class="action-button" id="historyExport"><i data-lucide="download"></i> Export telemetry CSV</button></div><article class="panel"><div class="panel-heading"><div><span class="eyebrow">LATEST DATABASE RECORDS</span><h3>Recent telemetry</h3></div><button class="text-button" id="loadHistory">Refresh history <i data-lucide="refresh-cw"></i></button></div><div class="table-wrap"><table><thead><tr><th>TIMESTAMP</th><th>MACHINE</th><th>TEMP °C</th><th>HUMIDITY %</th><th>RPM</th><th>VIBRATION RMS</th><th>ENCLOSURE</th></tr></thead><tbody id="historyRows"></tbody></table></div><div id="historyEmpty" class="empty-note">No saved telemetry available.</div></article></section>
+
+<section class="page" id="page-maintenance">
+  <div class="section-intro"><div><span class="eyebrow">RELIABILITY WORKSPACE</span><h2>Maintenance planner</h2><p>Track inspections, planned work and shift handover notes for this prototype workstation.</p></div><span class="local-tag"><i data-lucide="hard-drive"></i> SAVED IN THIS BROWSER</span></div>
+  <div class="maintenance-kpis">
+    <article class="maintenance-kpi"><span>OPEN TASKS</span><b id="taskOpen">0</b><small>Awaiting completion</small></article>
+    <article class="maintenance-kpi"><span>OVERDUE</span><b id="taskOverdue">0</b><small>Past due date</small></article>
+    <article class="maintenance-kpi"><span>COMPLETED</span><b id="taskDone">0</b><small>Maintenance records</small></article>
+  </div>
+  <div class="maintenance-layout">
+    <article class="panel maintenance-form-panel">
+      <div class="panel-heading"><div><span class="eyebrow">PLAN AN ACTION</span><h3>Create maintenance task</h3></div><span class="form-icon"><i data-lucide="calendar-plus"></i></span></div>
+      <form id="maintenanceForm" class="maintenance-form">
+        <label>Task title<input id="taskTitle" required maxlength="90" placeholder="e.g. Inspect motor mounting bolts"></label>
+        <div class="form-two"><label>Due date<input id="taskDue" type="date" required></label><label>Priority<select id="taskPriority"><option>Medium</option><option>Low</option><option>High</option><option>Critical</option></select></label></div>
+        <label>Assigned to<input id="taskOwner" maxlength="50" placeholder="Operator / technician"></label>
+        <label>Notes<textarea id="taskNotes" rows="3" maxlength="300" placeholder="Inspection details, parts or safety precautions..."></textarea></label>
+        <button class="action-button submit-task" type="submit"><i data-lucide="plus"></i> Add maintenance task</button>
+      </form>
+      <p class="local-disclaimer"><i data-lucide="info"></i> Tasks are stored in this browser only. They are not yet synchronized to the server or shared across operators.</p>
+    </article>
+    <article class="panel task-list-panel">
+      <div class="panel-heading"><div><span class="eyebrow">WORK ORDER REGISTER</span><h3>Planned & completed work</h3></div><select id="taskFilter" aria-label="Filter tasks"><option value="Open">Open tasks</option><option value="All">All tasks</option><option value="Completed">Completed</option></select></div>
+      <div id="maintenanceTasks" class="maintenance-tasks"><div class="empty-note">No maintenance tasks yet. Create your first task.</div></div>
+    </article>
+  </div>
+  <article class="panel handover-panel">
+    <div class="panel-heading"><div><span class="eyebrow">SHIFT CONTINUITY</span><h3>Operator handover notes</h3></div><span class="saved-indicator" id="handoverSaved"><i></i> Auto-saved locally</span></div>
+    <textarea id="handoverNotes" rows="4" placeholder="Record machine observations, unresolved issues, unusual sounds, recent maintenance or instructions for the next shift..."></textarea>
+    <div class="handover-foot"><span>Keep notes factual and include the machine ID and time where possible.</span><button class="text-button" id="clearHandover">Clear notes</button></div>
+  </article>
+</section>
+
+<footer><span><b>IndustrialGuard AI</b> · Smart industrial condition monitoring prototype</span><span>Not certified for safety-critical protection · <a href="/docs" target="_blank">API documentation</a></span></footer>
+</div></main></div>
+<script src="/static/app.js"></script>
+</body></html>
