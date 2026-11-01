@@ -10,20 +10,40 @@ const SENSOR_META = [
 ];
 let latest = null, alarms = [], history = [], ws = null, apiOnline = false, mqttOnline = false;
 const chartOpts = {responsive:true,maintainAspectRatio:false,animation:false,plugins:{legend:{display:false},tooltip:{backgroundColor:'#14243a',borderColor:'#344a65',borderWidth:1,titleColor:'#edf4ff',bodyColor:'#b8c9dc'}},scales:{x:{grid:{color:'#263750'},ticks:{color:'#8196b1',maxTicksLimit:7,font:{size:9}},border:{color:'#34465f'}},y:{grid:{color:'#263750'},ticks:{color:'#8196b1',font:{size:9}},border:{color:'#34465f'}}}};
-let vibrationChart=null, axisChart=null, fftChart=null;
+let vibrationChart=null, axisChart=null, gyroChart=null, vibrationLabChart=null, fftChart=null;
 if (window.Chart) {
   vibrationChart = new Chart($('vibrationChart'),{type:'line',data:{labels:[],datasets:[{data:[],borderColor:'#4bd4e8',backgroundColor:'#4bd4e81c',fill:true,borderWidth:2,pointRadius:0,tension:.25}]},options:{...chartOpts,scales:{...chartOpts.scales,y:{...chartOpts.scales.y,beginAtZero:true}}}});
   axisChart = new Chart($('axisChart'),{type:'line',data:{labels:[],datasets:[{label:'X',data:[],borderColor:'#4bd4e8',pointRadius:0,borderWidth:1.5},{label:'Y',data:[],borderColor:'#ad91ff',pointRadius:0,borderWidth:1.5},{label:'Z',data:[],borderColor:'#ffbd69',pointRadius:0,borderWidth:1.5}]},options:{...chartOpts,plugins:{...chartOpts.plugins,legend:{display:true,labels:{color:'#aebed0',boxWidth:8,font:{size:9}}}}}});
+  const threeAxisDatasets = () => [{label:'X',data:[],borderColor:'#4bd4e8',pointRadius:0,borderWidth:1.5,tension:.2},{label:'Y',data:[],borderColor:'#ad91ff',pointRadius:0,borderWidth:1.5,tension:.2},{label:'Z',data:[],borderColor:'#ffbd69',pointRadius:0,borderWidth:1.5,tension:.2}];
+  gyroChart = new Chart($('gyroChart'),{type:'line',data:{labels:[],datasets:threeAxisDatasets()},options:{...chartOpts,plugins:{...chartOpts.plugins,legend:{display:true,labels:{color:'#aebed0',boxWidth:8,font:{size:9}}}}}});
+  vibrationLabChart = new Chart($('vibrationLabChart'),{type:'line',data:{labels:[],datasets:[{label:'RMS',data:[],borderColor:'#ad91ff',backgroundColor:'#ad91ff20',fill:true,pointRadius:0,borderWidth:2,tension:.2}]},options:{...chartOpts,scales:{...chartOpts.scales,y:{...chartOpts.scales.y,beginAtZero:true}}}});
+
 }
 function fmt(value,digits=2){return value===null||value===undefined||!Number.isFinite(Number(value))?'—':Number(value).toFixed(digits)}
 function setState(id,kind,label){const el=$(id);if(!el)return;el.className=`state ${kind}`;el.textContent=label}
 function statusClass(s){return ['connected','online','ok','ready'].includes(String(s||'').toLowerCase())?'connected':['disconnected','offline','error','failed'].includes(String(s||'').toLowerCase())?'disconnected':['warning','degraded'].includes(String(s||'').toLowerCase())?'warning':'unknown'}
 function sensorStatus(d,id){const explicit=d?.sensor_status?.[id];if(explicit)return statusClass(explicit);if(id==='mpu6050'&&d?.mpu6050)return 'connected';if(id==='dht22'&&d?.dht22&&d.dht22.temperature_c!=null&&d.dht22.humidity_pct!=null)return 'connected';if(id==='a3144'&&d?.a3144)return 'connected';if(id==='sw420'&&d?.sw420&&d.sw420.detected!==undefined)return 'connected';if(id==='mc38'&&d?.mc38&&d.mc38.closed!==undefined)return 'connected';if(id==='mq2'&&d?.mq2?.enabled===true&&d.mq2.raw_adc!==undefined)return 'connected';return 'unknown'}
 function statusLabel(s){return s==='connected'?'CONNECTED':s==='disconnected'?'DISCONNECTED':s==='warning'?'WARNING':'NOT REPORTED'}
+function readMpu(d){
+ const m=d?.mpu6050||{};
+ const nested=!!(m.acceleration||m.gyroscope);
+ const a=m.acceleration||{},g=m.gyroscope||{};
+ // Current ESP32 firmware publishes flat ax/ay/az in g and gx/gy/gz in rad/s.
+ // The documented nested payload uses acceleration in m/s², so convert it to g.
+ const accel=nested
+   ? {x:a.x==null?null:Number(a.x)/9.80665,y:a.y==null?null:Number(a.y)/9.80665,z:a.z==null?null:Number(a.z)/9.80665}
+   : {x:m.ax==null?null:Number(m.ax),y:m.ay==null?null:Number(m.ay),z:m.az==null?null:Number(m.az)};
+ const gyro=nested
+   ? {x:g.x==null?null:Number(g.x),y:g.y==null?null:Number(g.y),z:g.z==null?null:Number(g.z)}
+   : {x:m.gx==null?null:Number(m.gx),y:m.gy==null?null:Number(m.gy),z:m.gz==null?null:Number(m.gz)};
+ const valid=Object.values(accel).some(v=>v!==null&&Number.isFinite(v))||Object.values(gyro).some(v=>v!==null&&Number.isFinite(v));
+ return {accel,gyro,valid,rms:m.vibration_rms_g??d?.vibration_rms};
+}
+
 function renderSensorSummaries(d){
  const overview=$('overviewSensorList'),full=$('sensorGrid'),device=$('deviceSensorList');overview.innerHTML='';full.innerHTML='';device.innerHTML='';
  SENSOR_META.forEach(meta=>{const s=sensorStatus(d,meta.id),obj=d?.[meta.id]||{};let value='—',detail=meta.desc;
-  if(meta.id==='mpu6050'&&obj.acceleration){value=`X ${fmt(obj.acceleration.x)} · Y ${fmt(obj.acceleration.y)} · Z ${fmt(obj.acceleration.z)}`;detail='Acceleration · m/s²'}
+  if(meta.id==='mpu6050'){const im=readMpu(d);if(im.valid){value=`X ${fmt(im.accel.x)} · Y ${fmt(im.accel.y)} · Z ${fmt(im.accel.z)}`;detail='Acceleration · g';}else{value='No valid axis data';detail='Check MPU6050 I²C readings';}}
   if(meta.id==='sw420'&&obj.detected!==undefined){value=obj.detected?'Vibration detected':'No vibration event';detail='Digital output: '+(obj.digital_output??'—')}
   if(meta.id==='dht22'){value=obj.temperature_c!=null?`${fmt(obj.temperature_c,1)} °C`:'—';detail=obj.humidity_pct!=null?`Humidity ${fmt(obj.humidity_pct,1)} %`:'Awaiting valid temperature / humidity'}
   if(meta.id==='a3144'){value=obj.rpm!=null?`${Math.round(obj.rpm)} RPM`:obj.magnet_detected!==undefined?(obj.magnet_detected?'Magnet detected':'Magnet removed'):'—';detail=`Pulses: ${obj.pulses_per_second??obj.pulses??'—'} / s`}
@@ -34,14 +54,15 @@ function renderSensorSummaries(d){
   const row=document.createElement('div');row.className='device-row';row.innerHTML=`<span class="device-row-icon"><i data-lucide="${meta.icon}"></i></span><span class="device-row-main"><b>${meta.name}</b><small>${meta.desc}</small></span><span class="device-row-status ${s}">${statusLabel(s)}</span>`;device.appendChild(row);
  });if(window.lucide)lucide.createIcons();
 }
-function renderTelemetry(d){latest=d;const m=d.mpu6050||{},a=m.acceleration||{},g=m.gyroscope||{},t=d.dht22||{},hall=d.a3144||{},gas=d.mq2||{},reed=d.mc38||{},sw=d.sw420||{};
+function renderTelemetry(d){latest=d;const mpu=readMpu(d),a=mpu.accel,g=mpu.gyro,t=d.dht22||{},hall=d.a3144||{},gas=d.mq2||{},reed=d.mc38||{},sw=d.sw420||{};
  const vib=d.vibration_rms??m.vibration_rms_g;const rpm=hall.rpm??d.rpm;const temp=t.temperature_c??d.ambient_temperature;const hum=t.humidity_pct??d.humidity;
  $('kpiVibration').innerHTML=`${fmt(vib)} <small>g</small>`;$('kpiRpm').innerHTML=`${rpm==null?'—':Math.round(rpm)} <small>RPM</small>`;$('kpiTemp').innerHTML=`${fmt(temp,1)} <small>°C</small>`;$('kpiHumidity').innerHTML=`${fmt(hum,1)} <small>%</small>`;
  setState('vibrationStatus',vib==null?'neutral':vib>=1.8?'critical':vib>=1.2?'warning':'normal',vib==null?'No reading':vib>=1.8?'Critical':vib>=1.2?'Warning':'Normal');
  setState('rpmStatus',rpm==null?'neutral':rpm<=0?'warning':'normal',rpm==null?'No reading':rpm<=0?'Stopped':'Reading');
  setState('tempStatus',temp==null?'neutral':temp>=55?'critical':temp>=45?'warning':'normal',temp==null?'No reading':temp>=55?'Critical':temp>=45?'High':'Normal');
  setState('humidityStatus',hum==null?'neutral':'normal',hum==null?'No reading':'Reading');
- $('axisX').textContent=fmt(a.x);$('axisY').textContent=fmt(a.y);$('axisZ').textContent=fmt(a.z);$('gyroXYZ').textContent=[g.x,g.y,g.z].every(x=>x!=null)?`${fmt(g.x)} / ${fmt(g.y)} / ${fmt(g.z)}`:'—';
+ $('axisX').textContent=fmt(a.x,3);$('axisY').textContent=fmt(a.y,3);$('axisZ').textContent=fmt(a.z,3);
+ $('gyroX').textContent=fmt(g.x,4);$('gyroY').textContent=fmt(g.y,4);$('gyroZ').textContent=fmt(g.z,4);
  $('vibNow').textContent=vib==null?'No RMS metric':`${fmt(vib)} g`;
  const machineCritical=(vib!=null&&vib>=1.8)||(temp!=null&&temp>=55);const machineWarning=!machineCritical&&((vib!=null&&vib>=1.2)||(temp!=null&&temp>=45)||(reed.closed===false));
  const state=machineCritical?'critical':machineWarning?'warning':'normal';$('machineState').className=`state ${state}`;$('machineState').textContent=machineCritical?'CRITICAL':machineWarning?'WARNING':'MONITORING';
@@ -53,8 +74,41 @@ function renderTelemetry(d){latest=d;const m=d.mpu6050||{},a=m.acceleration||{},
  $('sideConnection').textContent='Telemetry received from controller';$('sideMode').textContent='HARDWARE DATA';$('sideMode').parentElement.classList.add('ok');$('modeBadge').className='mode-badge hardware';$('modeBadge').innerHTML='<i></i> REAL HARDWARE DATA';
  renderSensorSummaries(d);updateCharts(d,vib);
 }
-let sampleCount=0;function updateCharts(d,vib){const time=new Date(d.timestamp||Date.now()).toLocaleTimeString();if(vibrationChart&&vib!=null){vibrationChart.data.labels.push(time);vibrationChart.data.datasets[0].data.push(vib);vibrationChart.data.labels=vibrationChart.data.labels.slice(-60);vibrationChart.data.datasets[0].data=vibrationChart.data.datasets[0].data.slice(-60);vibrationChart.update('none')}
- const a=d.mpu6050?.acceleration;if(axisChart&&a){axisChart.data.labels.push(time);['x','y','z'].forEach((k,i)=>axisChart.data.datasets[i].data.push(a[k]??null));axisChart.data.labels=axisChart.data.labels.slice(-60);axisChart.data.datasets.forEach(ds=>ds.data=ds.data.slice(-60));axisChart.update('none')}
+let sampleCount=0;
+function updateCharts(d,vib){
+ const time=new Date(d.timestamp||Date.now()).toLocaleTimeString();
+ const im=readMpu(d),acc=im.accel,gyro=im.gyro;
+ const pushWindow=(chart,values)=>{
+  if(!chart)return;
+  chart.data.labels.push(time);
+  values.forEach((v,i)=>chart.data.datasets[i].data.push(v));
+  chart.data.labels=chart.data.labels.slice(-60);
+  chart.data.datasets.forEach(ds=>ds.data=ds.data.slice(-60));
+  chart.update('none');
+ };
+ if(vibrationChart&&vib!=null){vibrationChart.data.labels.push(time);vibrationChart.data.datasets[0].data.push(vib);vibrationChart.data.labels=vibrationChart.data.labels.slice(-60);vibrationChart.data.datasets[0].data=vibrationChart.data.datasets[0].data.slice(-60);vibrationChart.update('none')}
+ if(im.valid){
+  pushWindow(axisChart,[acc.x,acc.y,acc.z]);
+  pushWindow(gyroChart,[gyro.x,gyro.y,gyro.z]);
+ }
+ if(vibrationLabChart&&vib!=null){
+  vibrationLabChart.data.labels.push(time);vibrationLabChart.data.datasets[0].data.push(vib);
+  vibrationLabChart.data.labels=vibrationLabChart.data.labels.slice(-60);
+  vibrationLabChart.data.datasets[0].data=vibrationLabChart.data.datasets[0].data.slice(-60);
+  vibrationLabChart.update('none');
+ }
+ // Estimate roll and pitch from gravity vector only. This is not full 3D attitude or yaw.
+ if(acc.x!=null&&acc.y!=null&&acc.z!=null&&[acc.x,acc.y,acc.z].every(Number.isFinite)){
+  const roll=Math.atan2(acc.y,acc.z)*180/Math.PI;
+  const pitch=Math.atan2(-acc.x,Math.sqrt(acc.y*acc.y+acc.z*acc.z))*180/Math.PI;
+  $('orientationRoll').textContent=`${roll.toFixed(1)}°`;
+  $('orientationPitch').textContent=`${pitch.toFixed(1)}°`;
+  $('orientationCube').style.transform=`rotateX(${-pitch}deg) rotateY(${roll}deg)`;
+  $('orientationNote').textContent='Tilt estimate from accelerometer. Motion and vibration can affect accuracy; yaw requires gyro fusion and calibration.';
+ }else{
+  $('orientationRoll').textContent='—';$('orientationPitch').textContent='—';
+  $('orientationNote').textContent='Waiting for valid accelerometer data. Yaw is not estimated by accelerometer alone.';
+ }
  const fft=d.fft;if(fft&&Array.isArray(fft.frequencies_hz)&&Array.isArray(fft.magnitudes)&&window.Chart){$('fftPlaceholder').classList.add('hidden');$('fftChartWrap').classList.remove('hidden');if(!fftChart)fftChart=new Chart($('fftChart'),{type:'bar',data:{labels:fft.frequencies_hz,datasets:[{data:fft.magnitudes,backgroundColor:'#4bd4e8',borderRadius:2}]},options:chartOpts});else{fftChart.data.labels=fft.frequencies_hz;fftChart.data.datasets[0].data=fft.magnitudes;fftChart.update('none')}}sampleCount++;
 }
 function safeTime(ts){const d=ts?new Date(ts):new Date();return Number.isNaN(d.getTime())?'—':d.toLocaleTimeString()}

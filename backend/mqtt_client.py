@@ -34,7 +34,10 @@ def start_mqtt(on_telemetry):
         # Create an MQTT client
         client = mqtt.Client(
             callback_api_version=mqtt.CallbackAPIVersion.VERSION2,
-            client_id="industrialguard_render_backend",
+            client_id=os.getenv(
+    "MQTT_CLIENT_ID",
+    "industrialguard_local_backend"
+),
             protocol=mqtt.MQTTv311
         )
 

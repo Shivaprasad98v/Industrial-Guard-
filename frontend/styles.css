@@ -83,3 +83,39 @@ body:before{content:"";position:fixed;inset:0;pointer-events:none;z-index:0;opac
 @media(max-width:1050px){.maintenance-layout{grid-template-columns:1fr}}
 @media(max-width:850px){.command-button span{display:none}.command-button{padding:8px}.maintenance-kpis{grid-template-columns:repeat(3,1fr)}}
 @media(max-width:560px){.maintenance-kpis{gap:7px}.maintenance-kpi{padding:11px}.maintenance-kpi b{font-size:21px}.task-item{grid-template-columns:auto 1fr}.task-side{grid-column:2;justify-items:start;display:flex;align-items:center;flex-wrap:wrap}.form-two{grid-template-columns:1fr}.handover-foot{align-items:flex-start;flex-direction:column}}
+
+/* MPU6050 Motion & Vibration Lab */
+.imu-section-label{display:flex;align-items:center;justify-content:space-between;margin:18px 0 10px}
+.imu-unit{font-size:11px;color:var(--muted);padding:5px 9px;border:1px solid var(--line);border-radius:20px;background:#14243a}
+.imu-six-grid{grid-template-columns:repeat(3,minmax(0,1fr));margin-bottom:12px}
+.imu-six-grid .axis-card b{font-variant-numeric:tabular-nums}
+.imu-analytics-grid{margin-top:14px}
+/* Realistic GY-521 / MPU6050 board model. CSS-only 3D illustration, driven by live roll/pitch. */
+.orientation-panel{min-height:370px}
+.orientation-stage{height:245px;position:relative;display:grid;place-items:center;perspective:950px;overflow:hidden;background:radial-gradient(ellipse at 50% 56%,#1c4560 0%,#142940 38%,#101d30 72%,transparent 100%);border-radius:12px;isolation:isolate}
+.orientation-stage:before{content:"";position:absolute;width:270px;height:150px;bottom:10px;left:50%;transform:translateX(-50%);background:radial-gradient(ellipse,#39d7e51c,transparent 70%);pointer-events:none}
+.mpu-model-shadow{position:absolute;width:180px;height:35px;left:50%;top:72%;transform:translateX(-50%) rotateX(68deg);background:#020914;filter:blur(13px);border-radius:50%;opacity:.75}
+.mpu-board{position:relative;width:174px;height:132px;border-radius:13px 10px 12px 9px;transform-style:preserve-3d;transform:rotateX(-12deg) rotateY(-22deg);transition:transform .28s cubic-bezier(.2,.7,.2,1);background:linear-gradient(135deg,#147b69 0%,#0d655a 48%,#084b49 100%);border:1px solid #65d9c7;box-shadow:inset 0 0 0 3px #073f3b, inset 0 0 22px #8bffe01a, 0 18px 32px #02091499;}
+.mpu-board:before{content:"";position:absolute;inset:5px;border:1px solid #a2f5d12b;border-radius:8px;pointer-events:none}
+.mpu-board:after{content:"";position:absolute;left:7px;right:7px;bottom:-7px;height:7px;border-radius:0 0 7px 7px;background:linear-gradient(90deg,#063e3c,#0b5a50,#073e3b);transform:rotateX(-90deg);transform-origin:top;filter:brightness(.8)}
+.board-hole{position:absolute;width:11px;height:11px;border-radius:50%;background:radial-gradient(circle at 45% 42%,#071827 0 34%,#b4d9c7 39% 51%,#246f61 58%);box-shadow:0 0 0 1px #b7f1d255;z-index:3}
+.hole-tl{left:8px;top:8px}.hole-tr{right:8px;top:8px}.hole-bl{left:8px;bottom:8px}.hole-br{right:8px;bottom:8px}
+.board-chip{position:absolute;left:57px;top:39px;width:59px;height:53px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;color:#dce9ee;background:linear-gradient(145deg,#202c35,#080f18 72%);border:1px solid #879ba2;border-radius:4px;box-shadow:inset 0 0 0 2px #34434b,0 3px 5px #001b18;transform:translateZ(7px)}
+.board-chip:before,.board-chip:after{content:"";position:absolute;left:-5px;right:-5px;height:4px;background:repeating-linear-gradient(90deg,#b9c5c3 0 2px,transparent 2px 7px)}.board-chip:before{top:-3px}.board-chip:after{bottom:-3px}
+.board-chip b{font-size:13px;letter-spacing:1px}.board-chip small{font-size:8px;color:#a9c2c9;letter-spacing:2px}
+.board-regulator{position:absolute;left:27px;top:29px;width:17px;height:22px;background:#18252b;border:1px solid #9ab8a9;border-radius:2px;box-shadow:0 2px 3px #001b18;transform:translateZ(4px)}.board-regulator i{display:block;height:2px;margin:3px;background:#b7c5b7}
+.board-crystal{position:absolute;right:27px;top:30px;padding:3px 5px;border-radius:2px;background:linear-gradient(135deg,#c4d0c8,#586b68);color:#183b37;font-size:7px;font-weight:800;transform:translateZ(3px)}
+.board-label{position:absolute;left:57px;bottom:17px;color:#c3f4df;font-size:8px;font-weight:800;letter-spacing:2px;text-shadow:0 1px 2px #003b32;transform:translateZ(2px)}
+.board-trace{position:absolute;height:1px;background:#a8e7b55c;transform:translateZ(1px)}.trace-a{left:25px;top:62px;width:28px;transform:rotate(18deg) translateZ(1px)}.trace-b{right:18px;top:70px;width:25px;transform:rotate(-20deg) translateZ(1px)}.trace-c{left:30px;bottom:32px;width:22px;transform:rotate(-18deg) translateZ(1px)}
+.board-pin-row{position:absolute;top:43px;display:flex;flex-direction:column;gap:4px;transform:translateZ(3px)}.board-pin-row i{width:24px;height:7px;display:grid;place-items:center;background:linear-gradient(90deg,#d3d8c5,#71877d);border:1px solid #d5e1ce;border-radius:1px;color:#16463e;font-size:4px;font-style:normal;font-weight:900}.pins-left{left:-26px}.pins-right{right:-26px}
+.board-edge{position:absolute;top:12px;bottom:12px;width:3px;background:#c3d4bd;opacity:.9;transform:translateZ(1px)}.edge-left{left:-2px}.edge-right{right:-2px}
+.model-axis{position:absolute;font-size:9px;font-weight:900;text-shadow:0 1px 5px #000;pointer-events:none}.axis-x{right:calc(50% - 112px);top:52%;color:#ff8d8d}.axis-y{left:calc(50% + 94px);top:45%;color:#8ef0a7}.axis-z{left:calc(50% - 4px);top:17%;color:#79dfff}
+.orientation-readouts{display:flex;justify-content:center;gap:26px;margin:10px 0;color:var(--muted);font-size:10px;letter-spacing:.1em}
+.orientation-readouts b{color:var(--cyan);font-size:13px;margin-left:5px}
+.orientation-note{margin:0;color:var(--muted);font-size:11px;line-height:1.5;text-align:center}
+@media(max-width:520px){.orientation-stage{height:225px}.mpu-board{transform:scale(.88) rotateX(-12deg) rotateY(-22deg)}}
+.orientation-readouts{display:flex;justify-content:center;gap:26px;margin:10px 0;color:var(--muted);font-size:10px;letter-spacing:.1em}
+.orientation-readouts b{color:var(--cyan);font-size:13px;margin-left:5px}
+.orientation-note{margin:0;color:var(--muted);font-size:11px;line-height:1.5;text-align:center}
+@media(max-width:850px){.imu-analytics-grid{grid-template-columns:1fr}.imu-six-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:520px){.imu-six-grid{grid-template-columns:1fr}.imu-six-grid .axis-card{min-height:88px}}
